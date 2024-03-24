@@ -1,2 +1,2 @@
 # workflows-playground
-A playground to lear about workflows dynamics
+A playground to learn about workflows dynamics
