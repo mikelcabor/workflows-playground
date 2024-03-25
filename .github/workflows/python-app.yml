@@ -1,0 +1,61 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Python application
+
+on: [push]
+
+permissions: write-all
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  REPO: ${{ github.repository }}
+  WORKSPACE: ${{ github.workspace }}
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.10"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+  manage-issues:
+    name: Execute test
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      issues_id: ${{ steps.matched_issues.outputs.issues_id }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Get issues ids
+      id: matched_issues
+      run: |
+        echo ${{ github.repository }}
+        ISSUES_MATCH=$(python ${{ github.workspace }}/.github/scripts/test.py)
+        echo $ISSUES_MATCH
+        echo ISSUES_ID=${ISSUES_MATCH} >> $GITHUB_ENV
+        echo "issues_id=${ISSUES_MATCH}" >> $GITHUB_OUTPUT
+    - name: Delete issues
+      if: steps.matched_issues.outputs.issues_id != '[]'
+      run: |
+          echo ${{ steps.matched_issues.outputs.issues_ids }}
+          python ${{ github.workspace }}/.github/scripts/deleteIssues.py
+  call-workflow:
+    needs: manage-issues
+    if: needs.manage-issues.outputs.issues_id != '[]'
+    name: Trigger workflow
+    uses: ./.github/workflows/github-actions-demo.yml
+    
+        
+
+        
+  
+        
